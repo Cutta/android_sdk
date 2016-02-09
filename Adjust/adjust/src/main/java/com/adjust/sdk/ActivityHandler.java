@@ -136,13 +136,13 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
     @Override
     public void finishedTrackingActivity(ResponseData responseData) {
         // redirect session responses to attribution handler to check for attribution information
-        if (responseData.activityKind == ActivityKind.SESSION) {
-            attributionHandler.checkSessionResponse(responseData);
+        if (responseData instanceof SessionResponseData) {
+            attributionHandler.checkSessionResponse((SessionResponseData)responseData);
             return;
         }
         // check if it's an event response
-        if (responseData.activityKind == ActivityKind.EVENT) {
-            launchEventResponseTasks(responseData);
+        if (responseData instanceof EventResponseData) {
+            launchEventResponseTasks((EventResponseData)responseData);
         }
     }
 
@@ -270,7 +270,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
     }
 
     @Override
-    public void launchEventResponseTasks(ResponseData responseData) {
+    public void launchEventResponseTasks(EventResponseData responseData) {
         Message message = Message.obtain();
         message.arg1 = SessionHandler.EVENT_TASKS;
         message.obj = responseData;
@@ -278,7 +278,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
     }
 
     @Override
-    public void launchSessionResponseTasks(ResponseData responseData) {
+    public void launchSessionResponseTasks(SessionResponseData responseData) {
         Message message = Message.obtain();
         message.arg1 = SessionHandler.SESSION_TASKS;
         message.obj = responseData;
@@ -286,7 +286,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
     }
 
     @Override
-    public void launchAttributionResponseTasks(ResponseData responseData) {
+    public void launchAttributionResponseTasks(AttributionResponseData responseData) {
         Message message = Message.obtain();
         message.arg1 = SessionHandler.ATTRIBUTION_TASKS;
         message.obj = responseData;
@@ -371,7 +371,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
                     sessionHandler.trackEventInternal(event);
                     break;
                 case EVENT_TASKS:
-                    ResponseData eventResponseData = (ResponseData) message.obj;
+                    EventResponseData eventResponseData = (EventResponseData) message.obj;
                     sessionHandler.launchEventResponseTasksInternal(eventResponseData);
                     break;
                 case DEEP_LINK:
@@ -389,11 +389,11 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
                     sessionHandler.timerFiredInternal();
                     break;
                 case SESSION_TASKS:
-                    ResponseData sessionResponseData = (ResponseData) message.obj;
+                    SessionResponseData sessionResponseData = (SessionResponseData) message.obj;
                     sessionHandler.launchSessionResponseTasksInternal(sessionResponseData);
                     break;
                 case ATTRIBUTION_TASKS:
-                    ResponseData attributionResponseData = (ResponseData) message.obj;
+                    AttributionResponseData attributionResponseData = (AttributionResponseData) message.obj;
                     sessionHandler.launchAttributionResponseTasksInternal(attributionResponseData);
                     break;
             }
@@ -561,7 +561,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
         writeActivityState();
     }
 
-    private void launchEventResponseTasksInternal(final ResponseData responseData) {
+    private void launchEventResponseTasksInternal(final EventResponseData responseData) {
         Handler handler = new Handler(adjustConfig.context.getMainLooper());
 
         // success callback
@@ -594,7 +594,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
         }
     }
 
-    private void launchSessionResponseTasksInternal(ResponseData responseData) {
+    private void launchSessionResponseTasksInternal(SessionResponseData responseData) {
         // use the same handler to ensure that all tasks are executed sequentially
         Handler handler = new Handler(adjustConfig.context.getMainLooper());
 
@@ -610,7 +610,7 @@ public class ActivityHandler extends HandlerThread implements IActivityHandler {
         launchDeeplink(responseData, handler);
     }
 
-    private void launchAttributionResponseTasksInternal(ResponseData responseData) {
+    private void launchAttributionResponseTasksInternal(AttributionResponseData responseData) {
         Handler handler = new Handler(adjustConfig.context.getMainLooper());
 
         // try to update the attribution
